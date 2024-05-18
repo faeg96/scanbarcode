@@ -43,6 +43,7 @@
     <video id="video" autoplay></video>
     <button id="start">Iniciar</button>
     <button id="stop">Detener</button>
+    <button id="toggle-camera">Cambiar Cámara</button>
     <canvas id="canvas" style="display: none;"></canvas>
     <script>
         let video = document.getElementById('video');
@@ -123,6 +124,10 @@
 
         document.getElementById('start').addEventListener('click', startCapturing);
         document.getElementById('stop').addEventListener('click', stopCapturing);
+        document.getElementById('toggle-camera').addEventListener('click', function() {
+            useFrontCamera = !useFrontCamera;
+            getCameraStream(useFrontCamera);
+        });
 
         // Inicialmente accede a la cámara frontal
         getCameraStream(useFrontCamera);
