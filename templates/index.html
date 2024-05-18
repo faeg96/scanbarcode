@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escaneo de Código de Barras con Cámara</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            margin: 0;
+            height: 100vh;
+            box-sizing: border-box;
+            background-color: #f0f0f0;
+        }
+        video, canvas {
+            width: 100%;
+            max-width: 640px;
+            height: auto;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        @media (max-width: 600px) {
+            button {
+                font-size: 14px;
+                padding: 8px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Escaneo de Código de Barras con Cámara</h1>
+    <video id="video" autoplay></video>
+    <button id="snap">Capturar</button>
+    <button id="toggle-camera">Cambiar Cámara</button>
+    <canvas id="canvas" style="display: none;"></canvas>
+    <script>
+        let video = document.getElementById('video');
+        let currentStream;
+        let useFrontCamera = true;
+
+        function stopMediaTracks(stream) {
+            stream.getTracks().forEach(track => {
+                track.stop();
+            });
+        }
+
+        function getCameraStream(useFront) {
+            if (currentStream) {
+                stopMediaTracks(currentStream);
+            }
+
+            const constraints = {
+                video: {
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    facingMode: useFront ? 'user' : 'environment'
+                }
+            };
+
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(stream => {
+                    currentStream = stream;
+                    video.srcObject = stream;
+                })
+                .catch(err => {
+                    console.error('Error accessing the camera', err);
+                });
+        }
+
+        document.getElementById('toggle-camera').addEventListener('click', function() {
+            useFrontCamera = !useFrontCamera;
+            getCameraStream(useFrontCamera);
+        });
+
+        document.getElementById('snap').addEventListener('click', function() {
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob(blob => {
+                let formData = new FormData();
+                formData.append('image', blob, 'barcode.jpg');
+
+                fetch('https://192.168.0.8:5000/scan-barcode', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Barcodes detected:', data);
+                    alert('Barcodes detected: ' + data.join(', '));
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }, 'image/jpeg');
+        });
+
+        // Inicialmente accede a la cámara frontal
+        getCameraStream(useFrontCamera);
+    </script>
+</body>
+</html>
