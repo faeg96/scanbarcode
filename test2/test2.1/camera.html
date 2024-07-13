@@ -49,7 +49,7 @@
     <script>
         let video = document.getElementById('video');
         let currentStream;
-        let useFrontCamera = true;
+        let useFrontCamera = false;  // Cambiado a false para iniciar con la cámara trasera
         let capturing = false;
         let codeReader = new ZXing.BrowserBarcodeReader();
         let selectedDeviceId;
@@ -66,7 +66,11 @@
             }
 
             codeReader.getVideoInputDevices().then(videoInputDevices => {
-                selectedDeviceId = useFront ? videoInputDevices[0].deviceId : videoInputDevices[1].deviceId;
+                if (videoInputDevices.length > 1) {
+                    selectedDeviceId = useFront ? videoInputDevices[1].deviceId : videoInputDevices[0].deviceId;
+                } else {
+                    selectedDeviceId = videoInputDevices[0].deviceId;
+                }
 
                 const constraints = {
                     video: {
@@ -134,7 +138,7 @@
             getCameraStream(useFrontCamera);
         });
 
-        // Inicialmente accede a la cámara frontal
+        // Inicialmente accede a la cámara trasera
         getCameraStream(useFrontCamera);
     </script>
 </body>
