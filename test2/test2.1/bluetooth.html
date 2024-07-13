@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escaneo con Lector Bluetooth</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            margin: 0;
+            height: 100vh;
+            box-sizing: border-box;
+            background-color: #f0f0f0;
+        }
+        input {
+            opacity: 0;
+            position: absolute;
+            top: -9999px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        @media (max-width: 600px) {
+            button {
+                font-size: 14px;
+                padding: 8px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Escaneo de Código de Barras con Lector Bluetooth</h1>
+    <input type="text" id="barcode-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <button onclick="document.getElementById('barcode-input').focus()">Enfocar Lector</button>
+    <script>
+        let barcode = '';
+
+        function handleBarcodeInput(event) {
+            if (event.key !== 'Enter') {
+                barcode += event.key;
+            } else {
+                event.preventDefault(); // Previene la acción predeterminada del Enter
+                alert('Código de barras detectado: ' + barcode.trim());
+                barcode = '';  // Reset the barcode variable
+                document.getElementById('barcode-input').value = '';  // Limpiar el campo de entrada
+                setTimeout(() => {
+                    document.getElementById('barcode-input').focus();  // Reenfocar para la siguiente lectura
+                }, 0);
+            }
+        }
+
+        document.getElementById('barcode-input').addEventListener('keydown', handleBarcodeInput);
+
+        // Enfocar el campo de entrada invisible para capturar la entrada del lector de códigos de barras
+        document.getElementById('barcode-input').focus();
+
+        // Asegurar que el campo de entrada mantenga el enfoque
+        document.getElementById('barcode-input').addEventListener('focusout', () => {
+            setTimeout(() => {
+                document.getElementById('barcode-input').focus();
+            }, 0);
+        });
+    </script>
+</body>
+</html>

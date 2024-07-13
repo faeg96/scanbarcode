@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escaneo de Código de Barras con Cámara</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            margin: 0;
+            height: 100vh;
+            box-sizing: border-box;
+            background-color: #f0f0f0;
+        }
+        video, canvas {
+            width: 100%;
+            max-width: 640px;
+            height: auto;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        @media (max-width: 600px) {
+            button {
+                font-size: 14px;
+                padding: 8px 16px;
+            }
+        }
+    </style>
+    <script src="https://unpkg.com/@zxing/library@latest"></script>
+</head>
+<body>
+    <h1>Escaneo de Código de Barras con Cámara</h1>
+    <video id="video" autoplay></video>
+    <button id="start">Iniciar</button>
+    <button id="stop">Detener</button>
+    <button id="toggle-camera">Cambiar Cámara</button>
+    <canvas id="canvas" style="display: none;"></canvas>
+    <script>
+        let video = document.getElementById('video');
+        let currentStream;
+        let useFrontCamera = true;
+        let capturing = false;
+        let codeReader = new ZXing.BrowserBarcodeReader();
+        let selectedDeviceId;
+
+        function stopMediaTracks(stream) {
+            stream.getTracks().forEach(track => {
+                track.stop();
+            });
+        }
+
+        function getCameraStream(useFront) {
+            if (currentStream) {
+                stopMediaTracks(currentStream);
+            }
+
+            codeReader.getVideoInputDevices().then(videoInputDevices => {
+                selectedDeviceId = useFront ? videoInputDevices[0].deviceId : videoInputDevices[1].deviceId;
+
+                const constraints = {
+                    video: {
+                        deviceId: { exact: selectedDeviceId },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        advanced: [{ focusMode: "continuous" }]
+                    }
+                };
+
+                navigator.mediaDevices.getUserMedia(constraints)
+                    .then(stream => {
+                        currentStream = stream;
+                        video.srcObject = stream;
+                    })
+                    .catch(err => {
+                        console.error('Error accessing the camera', err);
+                    });
+            }).catch(err => {
+                console.error('Error accessing video devices', err);
+            });
+        }
+
+        function startCapturing() {
+            if (capturing) return;  // Evitar múltiples inicios
+            capturing = true;
+
+            codeReader.decodeFromVideoDevice(selectedDeviceId, 'video', (result, err) => {
+                if (result) {
+                    console.log(result.text);
+                    alert('Código de barras detectado: ' + result.text);
+                    stopCapturing();
+                }
+                if (err && !(err instanceof ZXing.NotFoundException)) {
+                    console.error(err);
+                }
+            });
+        }
+
+        function stopCapturing() {
+            if (!capturing) return;  // Evitar múltiples detenciones
+            capturing = false;
+            codeReader.reset();
+            if (currentStream) {
+                stopMediaTracks(currentStream);
+                video.srcObject = null;  // Detener el video
+            }
+        }
+
+        document.getElementById('start').addEventListener('click', function() {
+            if (!capturing) {
+                startCapturing();
+            }
+        });
+
+        document.getElementById('stop').addEventListener('click', function() {
+            if (capturing) {
+                stopCapturing();
+            }
+        });
+
+        document.getElementById('toggle-camera').addEventListener('click', function() {
+            useFrontCamera = !useFrontCamera;
+            getCameraStream(useFrontCamera);
+        });
+
+        // Inicialmente accede a la cámara frontal
+        getCameraStream(useFrontCamera);
+    </script>
+</body>
+</html>
